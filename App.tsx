@@ -5,16 +5,18 @@ import {
   Text,
   View,
   TouchableOpacity,
-  TouchableHighlight,
-  Pressable,
+  TextInput,
 } from "react-native";
 import { theme } from "./colors";
 
 export default function App() {
   const [working, setWorking] = useState(true);
+  const [text, setText] = useState("");
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
-
+  const onChangeText = (payload) => {
+    setText(payload);
+  };
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -40,6 +42,12 @@ export default function App() {
           </Text>
         </TouchableOpacity>
       </View>
+      <TextInput
+        onChangeText={onChangeText}
+        value={text}
+        placeholder={working ? "Add a To Do" : "Where do you want to do"}
+        style={styles.input}
+      />
     </View>
   );
 }
@@ -59,5 +67,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 36,
     fontWeight: "600",
+  },
+  input: {
+    backgroundColor: "white",
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 28,
+    marginTop: 20,
+    fontSize: 16,
   },
 });
