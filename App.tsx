@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,44 +8,67 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Modal,
+  Pressable,
 } from "react-native";
 import { theme } from "./colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Fontisto } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 
-const STORAGE_KEY = "@toDos";
+const STORAGE_KEY_TODOS = "@toDos";
+const STORAGE_KEY_WORKING = "@working";
 
 export default function App() {
-  const [working, setWorking] = useState(true);
+  const [working, setWorking] = useState(Boolean);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
-  const travel = () => setWorking(false);
-  const work = () => setWorking(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [changeText, setChangeText] = useState("");
+  const [targetKey, setTargetKey] = useState("");
+
+  useEffect(() => {
+    loadToDos();
+    loadWorking();
+  }, []);
+
+  useEffect(() => {
+    saveWorking(working);
+  }, [working]);
+
+  const travel = () => {
+    setWorking(false);
+  };
+  const work = () => {
+    setWorking(true);
+  };
   const onChangeText = (payload) => {
     setText(payload);
   };
+  const onChangeChangeText = (payload) => {
+    setChangeText(payload);
+  };
   const saveToDos = async (toSave) => {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    await AsyncStorage.setItem(STORAGE_KEY_TODOS, JSON.stringify(toSave));
   };
   const loadToDos = async () => {
-    const toDos = await AsyncStorage.getItem(STORAGE_KEY);
+    const toDos = await AsyncStorage.getItem(STORAGE_KEY_TODOS);
     setToDos(JSON.parse(toDos));
   };
-  useEffect(() => {
-    loadToDos();
-  }, []);
   const addToDo = async () => {
     if (text === "") {
       return;
     }
-    const newToDos = { ...toDos, [Date.now()]: { text, working } };
+    const newToDos = {
+      ...toDos,
+      [Date.now()]: { text, working, confirm: false },
+    };
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
   };
   const deleteToDo = (key) => {
     Alert.alert("Delete To Do", "Are you sure?", [
-      { text: "Cancle" },
       {
         text: "Delete",
         style: "destructive",
@@ -56,10 +79,75 @@ export default function App() {
           saveToDos(newToDos);
         },
       },
+      { text: "Cancle" },
     ]);
   };
+  const confirmToDo = (key) => {
+    Alert.alert("Complete To Do", "Are you sure?", [
+      {
+        text: "Complete",
+        onPress: () => {
+          const newToDos: any = { ...toDos };
+          newToDos[key].confirm = true;
+          setToDos(newToDos);
+          saveToDos(newToDos);
+        },
+      },
+      { text: "Cancle", style: "destructive" },
+    ]);
+  };
+  const changeToDo = (key) => {
+    setModalVisible(true);
+    setTargetKey(key);
+  };
+  const _changeToDo = (key) => {
+    const newToDos: any = { ...toDos };
+    newToDos[key].text = changeText;
+    setToDos(newToDos);
+    saveToDos(newToDos);
+    setChangeText("");
+    setTargetKey("");
+    setModalVisible(false);
+  };
+  const saveWorking = async (toSave: Boolean) => {
+    AsyncStorage.setItem(STORAGE_KEY_WORKING, toSave.toString());
+  };
+  const loadWorking = async () => {
+    const loaded: string = await AsyncStorage.getItem(STORAGE_KEY_WORKING);
+    setWorking(JSON.parse(loaded));
+  };
+
   return (
     <View style={styles.container}>
+      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <View style={{ flexDirection: "row" }}>
+              <TextInput
+                style={{
+                  backgroundColor: "white",
+                  width: "85%",
+                  marginRight: 8,
+                  borderRadius: 24,
+                  paddingHorizontal: 8,
+                }}
+                placeholder="Change Text"
+                value={changeText}
+                onChangeText={onChangeChangeText}
+                onSubmitEditing={() => {
+                  _changeToDo(targetKey);
+                }}
+              />
+              <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => _changeToDo(targetKey)}
+              >
+                <Text style={styles.textStyle}>Change</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <StatusBar style="light" />
       <View style={styles.header}>
         <TouchableOpacity onPress={work}>
@@ -94,11 +182,39 @@ export default function App() {
       <ScrollView>
         {Object.keys(toDos).map((key) =>
           toDos[key].working === working ? (
-            <View style={styles.toDo} key={key}>
+            <View
+              style={{
+                ...styles.toDo,
+                backgroundColor: !toDos[key].confirm
+                  ? theme.toDoBg
+                  : theme.confirm,
+              }}
+              key={key}
+            >
               <Text style={styles.toDoText}>{toDos[key].text}</Text>
-              <TouchableOpacity onPress={() => deleteToDo(key)}>
-                <Fontisto name="trash" size={18} color={theme.gray} />
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row" }}>
+                <TouchableOpacity onPress={() => changeToDo(key)}>
+                  <MaterialIcons
+                    style={{ paddingRight: 12 }}
+                    name="input"
+                    size={16}
+                    color="#dfe6e9"
+                  />
+                </TouchableOpacity>
+                {!toDos[key].confirm && (
+                  <TouchableOpacity onPress={() => confirmToDo(key)}>
+                    <Fontisto
+                      style={{ paddingRight: 12 }}
+                      name="check"
+                      size={16}
+                      color={theme.check}
+                    />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => deleteToDo(key)}>
+                  <Fontisto name="trash" size={16} color={theme.delete} />
+                </TouchableOpacity>
+              </View>
             </View>
           ) : null
         )}
@@ -132,7 +248,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   toDo: {
-    backgroundColor: theme.toDoBg,
     marginBottom: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -145,5 +260,48 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "500",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  modalView: {
+    width: "80%",
+    margin: 20,
+    backgroundColor: "#2d3436",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonOpen: {
+    backgroundColor: "#F194FF",
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    color: "white",
   },
 });
