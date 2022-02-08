@@ -129,7 +129,8 @@ export default function App() {
                   width: "85%",
                   marginRight: 8,
                   borderRadius: 24,
-                  paddingHorizontal: 8,
+                  paddingHorizontal: 12,
+                  marginVertical: 7,
                 }}
                 placeholder="Change Text"
                 value={changeText}
@@ -138,12 +139,30 @@ export default function App() {
                   _changeToDo(targetKey);
                 }}
               />
-              <Pressable
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => _changeToDo(targetKey)}
-              >
-                <Text style={styles.textStyle}>Change</Text>
-              </Pressable>
+              <View>
+                <Pressable
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => _changeToDo(targetKey)}
+                >
+                  <Text style={styles.textStyle}>Change</Text>
+                </Pressable>
+                <Pressable
+                  style={{
+                    ...styles.button,
+                    ...styles.buttonClose,
+                    backgroundColor: theme.delete,
+                  }}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text
+                    style={{
+                      ...styles.textStyle,
+                    }}
+                  >
+                    Cancle
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
@@ -285,8 +304,9 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 20,
-    padding: 10,
+    padding: 5,
     elevation: 2,
+    margin: 2,
   },
   buttonOpen: {
     backgroundColor: "#F194FF",
@@ -300,7 +320,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   modalText: {
-    marginBottom: 15,
+    marginBottom: 12,
     textAlign: "center",
     color: "white",
   },
