@@ -49,11 +49,17 @@ export default function App() {
     setChangeText(payload);
   };
   const saveToDos = async (toSave) => {
-    await AsyncStorage.setItem(STORAGE_KEY_TODOS, JSON.stringify(toSave));
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_TODOS, JSON.stringify(toSave));
+    } catch {}
   };
   const loadToDos = async () => {
-    const toDos = await AsyncStorage.getItem(STORAGE_KEY_TODOS);
-    setToDos(JSON.parse(toDos));
+    try {
+      const toDos = await AsyncStorage.getItem(STORAGE_KEY_TODOS);
+      if (toDos) {
+        setToDos(JSON.parse(toDos));
+      }
+    } catch {}
   };
   const addToDo = async () => {
     if (text === "") {
@@ -110,11 +116,15 @@ export default function App() {
     setModalVisible(false);
   };
   const saveWorking = async (toSave: Boolean) => {
-    AsyncStorage.setItem(STORAGE_KEY_WORKING, toSave.toString());
+    try {
+      AsyncStorage.setItem(STORAGE_KEY_WORKING, toSave.toString());
+    } catch {}
   };
   const loadWorking = async () => {
-    const loaded: string = await AsyncStorage.getItem(STORAGE_KEY_WORKING);
-    setWorking(JSON.parse(loaded));
+    try {
+      const loaded: string = await AsyncStorage.getItem(STORAGE_KEY_WORKING);
+      setWorking(JSON.parse(loaded));
+    } catch {}
   };
 
   return (
